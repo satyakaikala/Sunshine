@@ -34,15 +34,13 @@ import java.util.Vector;
  * Created by kaIkala on 9/23/2016.
  */
 
-public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
+public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
     private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
-    private ArrayAdapter<String> mForecastAdapter;
     private Context mcontext;
 
-    public FetchWeatherTask(Context context, ArrayAdapter<String> forecastAdapter) {
+    public FetchWeatherTask(Context context) {
         this.mcontext = context;
-        this.mForecastAdapter = forecastAdapter;
     }
 
     private boolean DEBUG = true;
@@ -130,7 +128,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
         return resultStrs;
     }
 
-    private String[] getWeatherDataFromJson(String forecastJsonStr, String locationSetting) throws JSONException {
+    private void getWeatherDataFromJson(String forecastJsonStr, String locationSetting) throws JSONException {
 
         // these are the names of the JSON object that need to be extracted.
 
@@ -229,41 +227,25 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
             }
 
+            int inserted = 0;
+
             // add to database
             if (cVVector.size() > 0) {
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
                 cVVector.toArray(cvArray);
-                mcontext.getContentResolver().bulkInsert(WeatherContract.WeatherEntry.CONTENT_URI, cvArray);
-            }
-
-            String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
-            Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(
-                    locationSetting, System.currentTimeMillis());
-
-            Cursor cursor = mcontext.getContentResolver().query(weatherForLocationUri, null, null, null, sortOrder);
-
-            cVVector = new Vector<ContentValues>(cursor.getCount());
-            if (cursor.moveToFirst()){
-                do {
-                    ContentValues cv = new ContentValues();
-                    DatabaseUtils.cursorRowToContentValues(cursor, cv);
-                    cVVector.add(cv);
-                } while (cursor.moveToNext());
+                inserted =  mcontext.getContentResolver().bulkInsert(WeatherContract.WeatherEntry.CONTENT_URI, cvArray);
             }
             Log.d(LOG_TAG, "FetchWeatherTask Complete. " + cVVector.size() + " Inserted");
 
-            String[] resultStrs = convertContentValuesToUXFormat(cVVector);
-            return resultStrs;
 
         } catch (JSONException e) {
             Log.e(LOG_TAG, e.getMessage(), e);
             e.printStackTrace();
         }
-        return null;
     }
 
     @Override
-    protected String[] doInBackground(String... params) {
+    protected Void doInBackground(String... params) {
 
         if (params.length == 0) {
             return null;
@@ -324,10 +306,12 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
             }
             forecastJson = buffer.toString();
 
+            getWeatherDataFromJson(forecastJson, locationQuery);
             Log.v(LOG_TAG, "Forecast data :" + forecastJson);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Error", e);
-            return null;
+        } catch (JSONException e) {
+            e.printStackTrace();
         } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();
@@ -341,24 +325,6 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
             }
         }
 
-        try {
-            return getWeatherDataFromJson(forecastJson, locationQuery);
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, e.getMessage(), e);
-            e.printStackTrace();
-        }
         return null;
-    }
-
-    @Override
-    protected void onPostExecute(String[] strings) {
-        if (strings != null) {
-            if (strings != null && mForecastAdapter != null) {
-                mForecastAdapter.clear();
-                for (String dayForeCastStr : strings) {
-                    mForecastAdapter.add(dayForeCastStr);
-                }
-            }
-        }
     }
 }
