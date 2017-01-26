@@ -30,12 +30,16 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
+    private final String FORECASTFRAGMENT_TAG = "forecastFragment_Tag";
+    private String location;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        location = Utility.getPreferredLocation(this);
         if(savedInstanceState == null){
-            getSupportFragmentManager().beginTransaction().add(R.id.container, new ForeCastFragment()).commit();
+            getSupportFragmentManager().beginTransaction().add(R.id.container, new ForeCastFragment(), FORECASTFRAGMENT_TAG).commit();
         }
     }
 
@@ -60,6 +64,20 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        String newlocation = Utility.getPreferredLocation(this);
+
+        if (newlocation != null && !newlocation.equals(location)) {
+            ForeCastFragment foreCastFragment = (ForeCastFragment)getSupportFragmentManager().findFragmentByTag(FORECASTFRAGMENT_TAG);
+            if (null != foreCastFragment) {
+                foreCastFragment.onLocationChanged();
+            }
+            newlocation = location;
+        }
     }
 
     private void openPreferredLocationInMap(){

@@ -36,7 +36,9 @@
 
         <provider
             android:authorities="com.kaikala.sunshine.data"
-            android:name=".data.WeatherProvider"/>
+            android:name=".data.WeatherProvider"
+            android:enabled="true"
+            android:exported="false"/>
     </application>
 
 </manifest>
