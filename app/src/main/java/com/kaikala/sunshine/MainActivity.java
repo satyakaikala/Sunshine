@@ -1,45 +1,34 @@
 package com.kaikala.sunshine;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
-import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ForeCastFragment.CallBack{
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
-    private final String FORECASTFRAGMENT_TAG = "forecastFragment_Tag";
+    private final String DETAIL_FRAGMENT_TAG = "detail_fragment_tag";
     private String location;
+    private boolean isTablet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         location = Utility.getPreferredLocation(this);
-        if(savedInstanceState == null){
-            getSupportFragmentManager().beginTransaction().add(R.id.container, new ForeCastFragment(), FORECASTFRAGMENT_TAG).commit();
+        if (findViewById(R.id.weather_detail_container) != null) {
+            // if detail container view will be present only in large-screen layouts i.e res/layout-sw600dp for tablets
+            isTablet = true;
+
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, new DetailFragment(), DETAIL_FRAGMENT_TAG).commit();
+            }
+        } else {
+            isTablet = false;
         }
     }
 
@@ -72,9 +61,14 @@ public class MainActivity extends AppCompatActivity {
         String newlocation = Utility.getPreferredLocation(this);
 
         if (newlocation != null && !newlocation.equals(location)) {
-            ForeCastFragment foreCastFragment = (ForeCastFragment)getSupportFragmentManager().findFragmentByTag(FORECASTFRAGMENT_TAG);
+            ForeCastFragment foreCastFragment = (ForeCastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast);
             if (null != foreCastFragment) {
                 foreCastFragment.onLocationChanged();
+            }
+
+            DetailFragment detailFragment = (DetailFragment)getSupportFragmentManager().findFragmentByTag(DETAIL_FRAGMENT_TAG);
+            if (detailFragment != null) {
+                detailFragment.onLocationChanged(location);
             }
             newlocation = location;
         }
@@ -94,6 +88,25 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         } else {
             Log.d(LOG_TAG, "couldn't call" + location + ", no receiving apps installed !");
+        }
+    }
+
+    @Override
+    public void onItemSelected(Uri dateUri) {
+
+        if (isTablet) {
+            Bundle args = new Bundle();
+
+            args.putParcelable(DetailFragment.DETAIL_URI, dateUri);
+
+            DetailFragment detailFragment = new DetailFragment();
+            detailFragment.setArguments(args);
+
+            getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container, detailFragment, DETAIL_FRAGMENT_TAG)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, DetailActivity.class).setData(dateUri);
+            startActivity(intent);
         }
     }
 }

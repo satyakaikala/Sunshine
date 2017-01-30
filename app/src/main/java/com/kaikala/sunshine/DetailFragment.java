@@ -2,6 +2,7 @@ package com.kaikala.sunshine;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -21,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.kaikala.sunshine.data.WeatherContract;
+import com.kaikala.sunshine.data.WeatherContract.WeatherEntry;
 
 import static com.kaikala.sunshine.ForeCastFragment.COL_WEATHER_CONDITION_ID;
 
@@ -31,8 +33,10 @@ import static com.kaikala.sunshine.ForeCastFragment.COL_WEATHER_CONDITION_ID;
 public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String LOG_TAG = DetailActivity.class.getSimpleName();
     private static final String FORECAST_SHARE_HASHTAG = "#SunshineApp";
+    static final String DETAIL_URI = "uri";
     private ShareActionProvider mShareActionProvider;
     private String mForecast;
+    private Uri uri;
     private static final int DETAIL_LOADER = 0;
 
 
@@ -45,12 +49,20 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private TextView mHumidityView;
     private TextView mWindView;
     private TextView mPressureView;
-    private static final String[] FORECAST_COLUMNS = {
-            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
-            WeatherContract.WeatherEntry.COLUMN_DATE,
-            WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
-            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
-            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
+    private static final String[] DETAIL_COLUMNS = {
+            WeatherEntry.TABLE_NAME + "." + WeatherEntry._ID,
+            WeatherEntry.COLUMN_DATE,
+            WeatherEntry.COLUMN_SHORT_DESC,
+            WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherEntry.COLUMN_HUMIDITY,
+            WeatherEntry.COLUMN_PRESSURE,
+            WeatherEntry.COLUMN_WIND_SPEED,
+            WeatherEntry.COLUMN_DEGREES,
+            WeatherEntry.COLUMN_WEATHER_ID,
+            // This works because the WeatherProvider returns location data joined with
+            // weather data, even though they're stored in two different tables.
+            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING
     };
 
     // these constants correspond to the projection defined above, and must change if the
@@ -74,6 +86,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
+        Bundle args = getArguments();
+        if (args != null) {
+            uri = args.getParcelable(DetailFragment.DETAIL_URI);
+        }
 
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         mIconView = (ImageView) rootView.findViewById(R.id.detail_icon);
@@ -96,7 +112,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
 
-        if (mShareActionProvider != null) {
+        if (mForecast != null) {
             mShareActionProvider.setShareIntent(createShareForecastIntent());
         } else {
             Log.d(LOG_TAG, "Share Action provider is null ?");
@@ -108,6 +124,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
+//        mForecast = FORECAST_SHARE_HASHTAG + " " + "Weather update for "
+//                + mFriendlyDateView + " "
+//                + mDateView + " "
+//                + "with a " + mHighTempView
+//                + " and low " + mLowTempView + ", with humidity of " + mHumidityView +".";
         shareIntent.putExtra(Intent.EXTRA_TEXT, mForecast + FORECAST_SHARE_HASHTAG);
 
         return shareIntent;
@@ -119,19 +140,29 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         super.onActivityCreated(savedInstanceState);
     }
 
+    void onLocationChanged(String newLocation) {
+    Uri uri = this.uri;
+
+        if (uri != null) {
+            long date = WeatherContract.WeatherEntry.getDateFromUri(uri);
+            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation, date);
+            this.uri = updatedUri;
+            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
+        }
+    }
+
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Intent intent = getActivity().getIntent();
-        if (intent == null) {
-            return null;
+        if (null != uri) {
+            return new CursorLoader(getActivity(),
+                    uri,
+                    DETAIL_COLUMNS,
+                    null,
+                    null,
+                    null);
         }
 
-        return new CursorLoader(getActivity(),
-                intent.getData(),
-                FORECAST_COLUMNS,
-                null,
-                null,
-                null);
+        return null;
     }
 
     @Override

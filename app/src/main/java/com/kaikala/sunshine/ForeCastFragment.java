@@ -65,6 +65,12 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
     static final int COL_COORD_LAT = 7;
     static final int COL_COORD_LONG = 8;
 
+
+    public interface CallBack {
+
+        public void onItemSelected(Uri dateUri);
+    }
+
     public ForeCastFragment() {
     }
 
@@ -113,9 +119,9 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
                 Cursor cursor = (Cursor) parent.getItemAtPosition(position);
                 if (cursor != null) {
                     String locationSettings = Utility.getPreferredLocation(getActivity());
-                    Intent intent = new Intent(getActivity(), DetailActivity.class)
-                            .setData(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationSettings, cursor.getLong(COL_WEATHER_DATE)));
-                    startActivity(intent);
+//                    Intent intent = new Intent(getActivity(), DetailActivity.class)
+                    ((CallBack) getActivity()).onItemSelected(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationSettings, cursor.getLong(COL_WEATHER_DATE)));
+//                    startActivity(intent);
                 }
             }
         });
