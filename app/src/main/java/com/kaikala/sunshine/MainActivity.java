@@ -29,7 +29,11 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
             }
         } else {
             isTablet = false;
+            getSupportActionBar().setElevation(0f);
         }
+
+        ForeCastFragment foreCastFragment = ((ForeCastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast));
+        foreCastFragment.setUseTodayLayout(!isTablet);
     }
 
     @Override
