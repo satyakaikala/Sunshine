@@ -10,7 +10,7 @@
 
     <!--Main activity theme-->
     <style name="ForecastTheme" parent="AppTheme">
-        <item name="actionbarStyle">@style/ActionBar.Solid.Sunshine.NoTitle</item>
+        <!--<item name="actionbarStyle">@style/ActionBar.Solid.Sunshine.NoTitle</item>-->
     </style>
     <!--main activity action bar style-->
     <style name="ActionBar.Solid.Sunshine.NoTitle" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
