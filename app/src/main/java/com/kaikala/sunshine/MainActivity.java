@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.kaikala.sunshine.sync.SunshineSyncAdapter;
+
 public class MainActivity extends AppCompatActivity implements ForeCastFragment.CallBack{
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -34,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
 
         ForeCastFragment foreCastFragment = ((ForeCastFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_forecast));
         foreCastFragment.setUseTodayLayout(!isTablet);
+
+        SunshineSyncAdapter.initializeSyncAdapter(this);
     }
 
     @Override
@@ -52,10 +56,6 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
             return true;
         }
 
-        if (id == R.id.action_map){
-            openPreferredLocationInMap();
-            return true;
-        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -75,23 +75,6 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
                 detailFragment.onLocationChanged(location);
             }
             newlocation = location;
-        }
-    }
-
-    private void openPreferredLocationInMap(){
-
-        String location = Utility.getPreferredLocation(this);
-
-        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
-                .appendQueryParameter("q",location)
-                .build();
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(geoLocation);
-
-        if (intent.resolveActivity(getPackageManager()) != null){
-            startActivity(intent);
-        } else {
-            Log.d(LOG_TAG, "couldn't call" + location + ", no receiving apps installed !");
         }
     }
 
