@@ -35,7 +35,7 @@ import java.util.ArrayList;
 /**
  * Created by kaIkala on 8/5/2016.
  */
-public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> , SharedPreferences.OnSharedPreferenceChangeListener{
     private ForecastAdapter mForecastAdapter;
     private static final String LOG_TAG = ForeCastFragment.class.getSimpleName();
     private static final int FORECAST_LOADER = 0;
@@ -79,6 +79,14 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
     static final int COL_COORD_LAT = 7;
     static final int COL_COORD_LONG = 8;
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+
+        if (key.equals(getString(R.string.pref_location_status_key))) {
+            updateEmptyView();
+        }
+    }
+
 
     public interface CallBack {
 
@@ -113,6 +121,20 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
         return super.onOptionsItemSelected(item);
     }
 
+
+    @Override
+    public void onResume() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 
     @Nullable
     @Override
@@ -168,17 +190,29 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
     private void updateEmptyView() {
-    if (mForecastAdapter.getCount() == 0) {
-        TextView textView = (TextView) getView().findViewById(R.id.listview_forecast_empty);
-        if (null != textView) {
-            int msg = R.string.empty_forecast_list;
-
-            if (!Utility.isNetworkAvailable(getActivity())) {
-                msg = R.string.empty_forecast_list_no_network;
+        if (mForecastAdapter.getCount() == 0) {
+            TextView textView = (TextView) getView().findViewById(R.id.listview_forecast_empty);
+            if (null != textView) {
+                int msg = R.string.empty_forecast_list;
+                @SunshineSyncAdapter.LocationStatus int location = Utility.getLocationSatus(getActivity());
+                switch (location) {
+                    case SunshineSyncAdapter.LOCATION_STATUS_SERVER_DOWN:
+                        msg = R.string.empty_forecast_list_server_down;
+                        break;
+                    case SunshineSyncAdapter.LOCATION_STATUS_SERVER_INVALID:
+                        msg = R.string.empty_forecast_list_server_error;
+                        break;
+                    case SunshineSyncAdapter.LOCATION_STATUS_INVALID:
+                        msg = R.string.empty_forecast_list_invalid_location;
+                        break;
+                    default:
+                        if (!Utility.isNetworkAvailable(getActivity())) {
+                            msg = R.string.empty_forecast_list_no_network;
+                        }
+                }
+                textView.setText(msg);
             }
-            textView.setText(msg);
         }
-    }
     }
 
     @Override
@@ -207,14 +241,14 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
         mForecastAdapter.swapCursor(null);
     }
 
-    public void setUseTodayLayout (boolean useTodayLayout) {
+    public void setUseTodayLayout(boolean useTodayLayout) {
         this.useTodayLayout = useTodayLayout;
         if (mForecastAdapter != null) {
             mForecastAdapter.setUseTodayLayout(useTodayLayout);
         }
     }
 
-    private void openPreferredLocationInMap(){
+    private void openPreferredLocationInMap() {
 
         if (null != mForecastAdapter) {
             Cursor c = mForecastAdapter.getCursor();
@@ -225,7 +259,7 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
                 Uri geoLocation = Uri.parse("geo:" + posLat + "," + posLong);
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(geoLocation);
-                if (intent.resolveActivity(getActivity().getPackageManager()) != null){
+                if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
                     startActivity(intent);
                 } else {
                     Log.d(LOG_TAG, "couldn't call" + geoLocation.toString() + ", no receiving apps installed !");
