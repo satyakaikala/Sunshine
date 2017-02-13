@@ -24,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.kaikala.sunshine.data.WeatherContract;
 import com.kaikala.sunshine.services.SunshineService;
@@ -121,6 +122,8 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
         View rootView = inflater.inflate(R.layout.fragment_layout, container, false);
 
         listView = (ListView) rootView.findViewById(R.id.listview_forecast);
+        View emptyView = rootView.findViewById(R.id.listview_forecast_empty);
+        listView.setEmptyView(emptyView);
         listView.setAdapter(mForecastAdapter);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -164,6 +167,20 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
         getLoaderManager().restartLoader(FORECAST_LOADER, null, this);
     }
 
+    private void updateEmptyView() {
+    if (mForecastAdapter.getCount() == 0) {
+        TextView textView = (TextView) getView().findViewById(R.id.listview_forecast_empty);
+        if (null != textView) {
+            int msg = R.string.empty_forecast_list;
+
+            if (!Utility.isNetworkAvailable(getActivity())) {
+                msg = R.string.empty_forecast_list_no_network;
+            }
+            textView.setText(msg);
+        }
+    }
+    }
+
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         String locationSetting = Utility.getPreferredLocation(getActivity());
@@ -182,6 +199,7 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
         if (selectedPosition != ListView.INVALID_POSITION) {
             listView.smoothScrollToPosition(selectedPosition);
         }
+        updateEmptyView();
     }
 
     @Override
