@@ -17,7 +17,7 @@ import android.widget.EditText;
  */
 
 public class LocationEditTextPreference extends EditTextPreference {
-    static final private int DEFAULT_MINIMUM_LOCATION_LENGTH = 2;
+    private static final int DEFAULT_MINIMUM_LOCATION_LENGTH = 2;
     private int minLength;
 
     public LocationEditTextPreference(Context context, AttributeSet attrs) {
