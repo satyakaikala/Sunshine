@@ -1,19 +1,26 @@
 package com.kaikala.sunshine;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.kaikala.sunshine.gcm.RegistrationIntentService;
 import com.kaikala.sunshine.sync.SunshineSyncAdapter;
 
 public class MainActivity extends AppCompatActivity implements ForeCastFragment.CallBack{
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
     private final String DETAIL_FRAGMENT_TAG = "detail_fragment_tag";
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    public static final String TOKEN_TO_SERVER_SENT = "tokenToServerSent";
     private String location;
     private boolean isTablet;
 
@@ -38,6 +45,17 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
         foreCastFragment.setUseTodayLayout(!isTablet);
 
         SunshineSyncAdapter.initializeSyncAdapter(this);
+
+        if (checkPlayServices()) {
+
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+            boolean tokenSent = preferences.getBoolean(TOKEN_TO_SERVER_SENT, false);
+            if (!tokenSent) {
+                Intent intent = new Intent(this, RegistrationIntentService.class);
+                startService(intent);
+            }
+        }
     }
 
     @Override
@@ -76,6 +94,21 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
             }
             newlocation = location;
         }
+    }
+
+    private boolean checkPlayServices() {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Log.i(LOG_TAG, "This device is not supported");
+                finish();
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
