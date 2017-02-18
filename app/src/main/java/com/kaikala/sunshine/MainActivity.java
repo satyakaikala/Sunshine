@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +29,9 @@ public class MainActivity extends AppCompatActivity implements ForeCastFragment.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+
         location = Utility.getPreferredLocation(this);
         if (findViewById(R.id.weather_detail_container) != null) {
             // if detail container view will be present only in large-screen layouts i.e res/layout-sw600dp for tablets
