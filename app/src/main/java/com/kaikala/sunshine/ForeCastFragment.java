@@ -1,8 +1,5 @@
 package com.kaikala.sunshine;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -22,15 +19,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.kaikala.sunshine.data.WeatherContract;
-import com.kaikala.sunshine.services.SunshineService;
 import com.kaikala.sunshine.sync.SunshineSyncAdapter;
-
-import java.util.ArrayList;
 
 /**
  * Created by kaIkala on 8/5/2016.
@@ -143,7 +136,7 @@ public class ForeCastFragment extends Fragment implements LoaderManager.LoaderCa
 
         View rootView = inflater.inflate(R.layout.fragment_layout, container, false);
 
-        listView = (ListView) rootView.findViewById(R.id.listview_forecast);
+        listView = (ListView) rootView.findViewById(R.id.recyclerview_forecast);
         View emptyView = rootView.findViewById(R.id.listview_forecast_empty);
         listView.setEmptyView(emptyView);
         listView.setAdapter(mForecastAdapter);
