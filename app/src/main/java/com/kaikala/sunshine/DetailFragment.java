@@ -10,8 +10,10 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.ShareActionProvider;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -41,6 +43,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private String mForecast;
     private Uri uri;
     private static final int DETAIL_LOADER = 0;
+    static final String DETAIL_TRANSITION_ANIMATION = "DTA";
+    private boolean transitionAnimation;
 
 
     private ImageView mIconView;
@@ -92,6 +96,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Bundle args = getArguments();
         if (args != null) {
             uri = args.getParcelable(DetailFragment.DETAIL_URI);
+            transitionAnimation = args.getBoolean(DetailFragment.DETAIL_TRANSITION_ANIMATION, false);
         }
 
         View rootView = inflater.inflate(R.layout.fragment_detail_start, container, false);
@@ -104,6 +109,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mWindView = (TextView) rootView.findViewById(R.id.detail_wind_textview);
         mPressureView = (TextView) rootView.findViewById(R.id.detail_pressure_textview);
         return rootView;
+    }
+
+    private void finishCreatingMenu(Menu menu) {
+        // Retrieve the share menu item
+        MenuItem menuItem = menu.findItem(R.id.action_share);
+        menuItem.setIntent(createShareForecastIntent());
     }
 
     @Override
@@ -232,6 +243,28 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             // If onCreateOptionsMenu has already happened, we need to update the share intent now.
             if (mShareActionProvider != null) {
                 mShareActionProvider.setShareIntent(createShareForecastIntent());
+            }
+
+            AppCompatActivity activity = (AppCompatActivity)getActivity();
+            Toolbar toolbarView = (Toolbar) getView().findViewById(R.id.toolbar);
+
+            // We need to start the enter transition after the data has loaded
+            if ( transitionAnimation ) {
+                activity.supportStartPostponedEnterTransition();
+
+                if ( null != toolbarView ) {
+                    activity.setSupportActionBar(toolbarView);
+
+                    activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
+                    activity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                }
+            } else {
+                if ( null != toolbarView ) {
+                    Menu menu = toolbarView.getMenu();
+                    if ( null != menu ) menu.clear();
+                    toolbarView.inflateMenu(R.menu.detailfragment);
+                    finishCreatingMenu(toolbarView.getMenu());
+                }
             }
         }
     }
