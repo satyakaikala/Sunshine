@@ -4,6 +4,7 @@ package com.kaikala.sunshine;
  * Created by skai0001 on 1/3/17.
  */
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
@@ -21,6 +22,29 @@ import java.util.Locale;
 public class Utility {
 
     public static final String DATE_FORMAT = "yyyyMMdd";
+
+    public static float DEFAULT_LATLONG = 0F;
+
+    public static boolean isLocationLatLonAvailable(Context context) {
+        SharedPreferences prefs
+                = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.contains(context.getString(R.string.pref_location_latitude))
+                && prefs.contains(context.getString(R.string.pref_location_longitude));
+    }
+
+    public static float getLocationLatitude(Context context) {
+        SharedPreferences prefs
+                = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getFloat(context.getString(R.string.pref_location_latitude),
+                DEFAULT_LATLONG);
+    }
+
+    public static float getLocationLongitude(Context context) {
+        SharedPreferences prefs
+                = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getFloat(context.getString(R.string.pref_location_longitude),
+                DEFAULT_LATLONG);
+    }
 
     public static String getPreferredLocation(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -57,17 +81,21 @@ public class Utility {
         return DateFormat.getDateInstance().format(date);
     }
 
-    public static String getFriendlyDayString(Context context, long dateInMillis) {
+    @SuppressLint("StringFormatMatches")
+    public static String getFriendlyDayString(Context context, long dateInMillis, boolean displayLongToday) {
         Time time = new Time();
         time.setToNow();
         long currentTime = System.currentTimeMillis();
         int julianDay = Time.getJulianDay(dateInMillis, time.gmtoff);
         int currentJulianDay = Time.getJulianDay(currentTime, time.gmtoff);
 
-        if (julianDay == currentJulianDay) {
+        if (displayLongToday && julianDay == currentJulianDay) {
             String today = context.getString(R.string.today);
             int formatId = R.string.format_full_friendly_date;
-            return String.format(context.getString(formatId, today, getFormattedMonthDay(context, dateInMillis)));
+            return String.format(context.getString(
+                    formatId,
+                    today,
+                    getFormattedMonthDay(context, dateInMillis)));
         } else if (julianDay < currentJulianDay + 7) {
             return getDayName(context, dateInMillis);
         } else {
@@ -254,6 +282,19 @@ public class Utility {
             return R.drawable.art_clouds;
         }
         return -1;
+    }
+
+    /**
+     * Helper method to return whether or not Sunshine is using local graphics.
+     *
+     * @param context Context to use for retrieving the preference
+     * @return true if Sunshine is using local graphics, false otherwise.
+     */
+    public static boolean usingLocalGraphics(Context context) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String sunshineArtPack = context.getString(R.string.pref_art_pack_sunshine);
+        return prefs.getString(context.getString(R.string.pref_art_pack_key),
+                sunshineArtPack).equals(sunshineArtPack);
     }
 
     @SuppressWarnings("ResourceType")

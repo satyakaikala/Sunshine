@@ -20,6 +20,7 @@
     <permission android:name="com.kaikala.sunshine.permission.C2D_MESSAGE" android:protectionLevel="signature"/>
     
     <uses-permission android:name="com.kaikala.sunshine.permission.C2D_MESSAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -34,6 +35,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBMEp8-ohT1TYXSudgBoZARRsARKHwao50"/>
+
         <activity android:name=".DetailActivity"
             android:parentActivityName=".MainActivity">
             <meta-data
@@ -85,7 +91,35 @@
                 android:resource="@xml/syncadapter" />
         </service>
 
+        <receiver
+            android:name=".widgets.TodayWidgetProvider"
+            android:label="@string/title_widget_today" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.kaikala.sunshine.ACTION_DATA_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_today" />
+        </receiver>
 
+        <service android:name=".widgets.TodayWidgetIntentService" />
+
+        <receiver
+            android:name=".widgets.DetailWidgetProvider"
+            android:label="@string/title_widget_detail"
+            android:enabled="@bool/widget_detail_enabled" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.android.sunshine.app.ACTION_DATA_UPDATED" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_detail" />
+        </receiver>
+        <service
+            android:name=".widgets.DetailWidgetRemoteViewsService"
+            android:enabled="@bool/widget_detail_enabled"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
         <!-- The Google Cloud Messaging receiver and services -->
         <receiver
             android:name="com.google.android.gms.gcm.GcmReceiver"

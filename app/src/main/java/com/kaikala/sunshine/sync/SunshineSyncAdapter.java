@@ -57,6 +57,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public final String LOG_TAG = SunshineSyncAdapter.class.getSimpleName();
 
 
+    public static final String ACTION_DATA_UPDATE = "com.kaikala.sunshine.ACTION_DATA_UPDATE";
     public static final int SYNC_INTERVAL = 60 * 180;
     public static final int SYNC_FLEXTIME = SYNC_INTERVAL / 3;
     private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
@@ -95,8 +96,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
         Log.d(LOG_TAG, "onPerformSync Called.");
 
+        Context context = getContext();
         String locationQuery = Utility.getPreferredLocation(getContext());
-
+        String locationLatitude = String.valueOf(Utility.getLocationLatitude(context));
+        String locationLongitude = String.valueOf(Utility.getLocationLongitude(context));
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
 
@@ -110,14 +113,21 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
             final String FORECAST_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
             final String QUERY_PARAM = "q";
+            final String LAT_PARAM = "lat";
+            final String LON_PARAM = "lon";
             final String FORAMT_PARAM = "mode";
             final String UNITS_PARAM = "units";
             final String DAYS_PARAM = "cnt";
             final String APPID_PARAM = "APPID";
 
-            Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
-                    .appendQueryParameter(QUERY_PARAM, locationQuery)
-                    .appendQueryParameter(FORAMT_PARAM, format)
+            Uri.Builder uriBuilder = Uri.parse(FORECAST_BASE_URL).buildUpon();
+                    if (Utility.isLocationLatLonAvailable(context)) {
+                        uriBuilder.appendQueryParameter(LAT_PARAM, locationLatitude)
+                                  .appendQueryParameter(LON_PARAM, locationLatitude);
+                    } else {
+                        uriBuilder.appendQueryParameter(QUERY_PARAM, locationQuery);
+                    }
+            Uri builtUri = uriBuilder.appendQueryParameter(FORAMT_PARAM, format)
                     .appendQueryParameter(UNITS_PARAM, units)
                     .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))
                     .appendQueryParameter(APPID_PARAM, BuildConfig.OPEN_WEATHER_MAP_API_KEY)
@@ -373,6 +383,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 getContext().getContentResolver().delete(WeatherContract.WeatherEntry.CONTENT_URI, WeatherContract.WeatherEntry.COLUMN_DATE + " <= ?",
                         new String[]{Long.toString(dayTime.setJulianDay(julianStartDay - 1))});
 
+                updateWidget();
                 notifyWeather();
             }
             Log.d(LOG_TAG, "Sync Complete. " + cVVector.size() + " Inserted");
@@ -521,6 +532,13 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
         locationCursor.close();
         return locationId;
+    }
+
+    private void updateWidget() {
+        Context context = getContext();
+
+        Intent dataUpdateIntent = new Intent(ACTION_DATA_UPDATE).setPackage(context.getPackageName());
+        context.sendBroadcast(dataUpdateIntent);
     }
 
     /*
