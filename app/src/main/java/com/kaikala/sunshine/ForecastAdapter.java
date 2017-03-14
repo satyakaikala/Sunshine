@@ -135,15 +135,17 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         cursor.moveToPosition(position);
         int weatherId = cursor.getInt(ForeCastFragment.COL_WEATHER_CONDITION_ID);
         int defaultImage;
-
+        boolean useLongToday = false;
         int viewType = getItemViewType(cursor.getPosition());
         switch (viewType) {
             case VIEW_TYPE_TODAY: {
                 defaultImage = Utility.getArtResourceForWeatherCondition(cursor.getInt(ForeCastFragment.COL_WEATHER_CONDITION_ID));
+                useLongToday = true;
                 break;
             }
             case VIEW_TYPE_FUTURE_DAY: {
                 defaultImage = Utility.getIconResourceForWeatherCondition(cursor.getInt(ForeCastFragment.COL_WEATHER_CONDITION_ID));
+                useLongToday = false;
                 break;
             }
         }
@@ -152,7 +154,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         // Read date from cursor
         long dateInMillis = cursor.getLong(ForeCastFragment.COL_WEATHER_DATE);
         // Find TextView and set formatted date on it
-        viewHolder.dateView.setText(Utility.getFriendlyDayString(context, dateInMillis));
+        viewHolder.dateView.setText(Utility.getFriendlyDayString(context, dateInMillis, useLongToday));
 
         // Read weather forecast from cursor
         String description = cursor.getString(ForeCastFragment.COL_WEATHER_DESC);
